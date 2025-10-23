@@ -2,22 +2,22 @@ from flask import Blueprint, request, jsonify
 import os
 import tempfile
 from werkzeug.utils import secure_filename
-from parsers.chase_parser import ChaseParser
-from parsers.amex_parser import AmexParser
-from parsers.bofa_parser import BofAParser
-from parsers.citi_parser import CitiParser
-from parsers.wells_fargo_parser import WellsFargoParser
+from parsers.amex_india_parser import AmexIndiaParser
+from parsers.hdfc_parser import HDFCParser
+from parsers.icici_parser import ICICIParser
+from parsers.kotak_parser import KotakParser
+from parsers.sbi_parser import SBIParser
 from utils.pdf_utils import PDFExtractor
 
 api_blueprint = Blueprint('api', __name__)
 
 ALLOWED_EXTENSIONS = {'pdf'}
 PARSERS = [
-    ChaseParser(),
-    AmexParser(),
-    BofAParser(),
-    CitiParser(),
-    WellsFargoParser()
+    AmexIndiaParser(),
+    HDFCParser(),
+    ICICIParser(),
+    KotakParser(),
+    SBIParser()
 ]
 
 def allowed_file(filename):
@@ -57,7 +57,9 @@ def parse_statement():
                     break
             
             if not parser:
-                return jsonify({'error': 'Unsupported credit card issuer'}), 400
+                return jsonify({
+                    'error': 'Unsupported bank or credit card issuer. Supported banks: American Express, HDFC Bank, ICICI Bank, Kotak Mahindra Bank, State Bank of India'
+                }), 400
             
             # Parse the statement
             statement_data = parser.parse(temp_path)
@@ -72,15 +74,17 @@ def parse_statement():
             os.unlink(temp_path)
     
     except Exception as e:
+        import traceback
+        print(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
 
 @api_blueprint.route('/supported-issuers', methods=['GET'])
 def get_supported_issuers():
     issuers = [
-        'Chase',
         'American Express',
-        'Bank of America',
-        'Citi',
-        'Wells Fargo'
+        'HDFC Bank',
+        'ICICI Bank',
+        'Kotak Mahindra Bank',
+        'State Bank of India'
     ]
     return jsonify({'issuers': issuers}), 200
